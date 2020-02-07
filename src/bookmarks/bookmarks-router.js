@@ -1,6 +1,7 @@
 const express = require('express')
 const uuid = require('uuid/v4')
 const logger = require('../logger')
+const BookmarksService = require('../bookmarks-service')
 
 //Create Router for bookmarksRouter
 const bookmarksRouter = express.Router()
@@ -24,7 +25,12 @@ bookmarksRouter
     .route('/bookmarks')
     .get((req, res) => {
         //respond with full list of bookmarks
-        res.json(bookmarks)
+        const knexInstance = req.app.get('db')
+        BookmarksService.getAllBookmarks(knexInstance)
+            .then(bookmarks => {
+                res.json(bookmarks)
+            })
+            .catch(next)
     })
     .post(bodyParser, (req, res) => {
         //POST new bookmark to list of bookmarks
