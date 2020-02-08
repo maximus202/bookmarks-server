@@ -30,7 +30,7 @@ bookmarksRouter
             .then(bookmarks => {
                 res.json(bookmarks)
             })
-            .catch(next)
+
     })
     .post(bodyParser, (req, res) => {
         //POST new bookmark to list of bookmarks

@@ -1,5 +1,5 @@
 const BookmarksService = {
-    getAllBookmarks() {
+    getAllBookmarks(knex) {
         return knex.select('*').from('bookmarks')
     }
 }
