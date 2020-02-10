@@ -35,35 +35,17 @@ bookmarksRouter
     .post(bodyParser, (req, res) => {
         //POST new bookmark to list of bookmarks
 
-        //deconstructing URL from request body
-        const { URL } = req.body
-        //if URL is missing, respond with error message
-        if (!URL) {
-            logger.error('URL is required.');
-            return res
-                .status(400)
-                .send('Invalid request.')
-        }
-
-        //if data exists, generate an ID and push bookmark object to array
-        //get id
-        const id = uuid()
-
-        //generate object
-        const bookmark = {
-            id,
-            URL
-        }
-
-        //push object to bookmarks array
-        bookmarks.push(bookmark);
-
-        //log bookmark creation and send response with location header
-        logger.info(`Created bookmark with ${id}`)
-        return res
-            .status(202)
-            .location(`http://localhost:8000/bookmarks/${id}`)
-            .json(bookmark)
+        const { title, url, description, rating } = req.body
+        const newBookmark = { title, url, description, rating }
+        BookmarksService.insertBookmark(
+            req.app.get('db'),
+            newBookmark
+        )
+            .then(bookmark => {
+                res
+                    .status(201)
+                    .json(bookmark)
+            })
     })
 
 //Route for /bookmarks/:id (GET bookmarks based on id and DELETE bookmarks based on id)
@@ -71,23 +53,16 @@ bookmarksRouter
     .route('/bookmarks/:id')
     .get((req, res) => {
         //Respond with single bookmark based on ID
-
-        //deconstruct URL from request
-        const { id } = req.params;
-
-        //find bookmark
-        const bookmark = bookmarks.find(bookmark => bookmark.id == id);
-
-        //Respond with error if bookmark was not found
-        if (!bookmark) {
-            logger.error(`No results found with id ${id}`);
-            return res
-                .status(404)
-                .send('Bookmark not found');
-        }
-
-        //If bookmark was found, send it in response
-        res.json(bookmark);
+        const knexInstance = req.app.get('db');
+        BookmarksService.getById(knexInstance, req.params.id)
+            .then(bookmark => {
+                if (!bookmark) {
+                    return res.status(404).json({
+                        error: { message: 'Bookmark does not exist' }
+                    })
+                }
+                res.json(bookmark)
+            })
     })
     .delete((req, res) => {
         //DELETE bookmark based on ID
