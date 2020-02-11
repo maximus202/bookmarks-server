@@ -18,7 +18,8 @@ const BookmarksService = {
         return knex('bookmarks')
             .where({ id })
             .delete()
-    }
+    },
+    //patch
 }
 
 module.exports = BookmarksService

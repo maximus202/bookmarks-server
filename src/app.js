@@ -41,7 +41,7 @@ app.get('/', (req, res) => {
 });
 
 //bookmarksRouter
-app.use(bookmarksRouter)
+app.use('/api/', bookmarksRouter)
 
 app.use(function errorHandler(error, req, res, next) {
     let response

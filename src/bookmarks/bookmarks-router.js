@@ -61,24 +61,30 @@ bookmarksRouter
 //Route for /bookmarks/:id (GET bookmarks based on id and DELETE bookmarks based on id)
 bookmarksRouter
     .route('/bookmarks/:id')
-    .get((req, res) => {
-        //Respond with single bookmark based on ID
+    .all((res, req, next) => {
         const knexInstance = req.app.get('db');
         BookmarksService.getById(knexInstance, req.params.id)
             .then(bookmark => {
                 if (!bookmark) {
                     return res.status(404).json({
-                        error: { message: 'Bookmark does not exist' }
+                        error: {
+                            message: 'Bookmark does not exist'
+                        }
                     })
                 }
-                res.json({
-                    id: bookmark.id,
-                    title: xss(bookmark.title),
-                    url: bookmark.url,
-                    description: xss(bookmark.description),
-                    rating: bookmark.rating
-                })
+                res.bookmark = bookmark
+                next()
             })
+    })
+    .get((req, res) => {
+        //Respond with single bookmark based on ID
+        res.json({
+            id: bookmark.id,
+            title: xss(bookmark.title),
+            url: bookmark.url,
+            description: xss(bookmark.description),
+            rating: bookmark.rating
+        })
     })
     .delete((req, res) => {
         //DELETE bookmark based on ID
@@ -89,6 +95,9 @@ bookmarksRouter
             .then(() => {
                 res.status(204).end()
             })
-    });
+    })
+    .patch((req, res) => {
+        res.status(204).end()
+    })
 
 module.exports = bookmarksRouter
