@@ -2,6 +2,7 @@ const express = require('express')
 const uuid = require('uuid/v4')
 const logger = require('../logger')
 const BookmarksService = require('../bookmarks-service')
+const xss = require('xss')
 
 //Create Router for bookmarksRouter
 const bookmarksRouter = express.Router()
@@ -13,12 +14,6 @@ const bodyParser = express.json()
 //GET /bookmarks/:id (returns single bookmark or 404 if not found)
 //POST /bookmarks (Adds an object to list of bookmarks)
 //DELETE /bookmarks/:id (Deletes bookmark with given id)
-
-//bookmarks array
-const bookmarks = [{
-    id: 1,
-    URL: 'google.com'
-}]
 
 //Route for /bookmarks (GET bookmarks list and POST new bookmark to list)
 bookmarksRouter
@@ -37,6 +32,15 @@ bookmarksRouter
 
         const { title, url, description, rating } = req.body
         const newBookmark = { title, url, description, rating }
+
+        for (const [key, value] of Object.entries(newBookmark)) {
+            if (value == null) {
+                return res.status(400).json({
+                    error: { message: `Missing ${key} in request body` }
+                })
+            }
+        }
+
         BookmarksService.insertBookmark(
             req.app.get('db'),
             newBookmark
@@ -44,7 +48,13 @@ bookmarksRouter
             .then(bookmark => {
                 res
                     .status(201)
-                    .json(bookmark)
+                    .json({
+                        id: bookmark.id,
+                        title: xss(bookmark.title),
+                        url: bookmark.url,
+                        description: xss(bookmark.description),
+                        rating: bookmark.rating
+                    })
             })
     })
 
@@ -61,32 +71,24 @@ bookmarksRouter
                         error: { message: 'Bookmark does not exist' }
                     })
                 }
-                res.json(bookmark)
+                res.json({
+                    id: bookmark.id,
+                    title: xss(bookmark.title),
+                    url: bookmark.url,
+                    description: xss(bookmark.description),
+                    rating: bookmark.rating
+                })
             })
     })
     .delete((req, res) => {
         //DELETE bookmark based on ID
-
-        //deconstruct id from request
-        const { id } = req.params
-
-        //Find ID
-        const bookmarkIndex = bookmarks.findIndex(li => li.id == id);
-
-        //If ID doesn't exist, respond with error
-        if (bookmarkIndex === -1) {
-            logger.error(`Bookmark with id ${id} not found.`);
-            return res
-                .status(404)
-                .send('Bookmark not found');
-        }
-
-        //If ID exists, remove from array
-        bookmarks.splice(bookmarkIndex, 1);
-        logger.info(`Bookmark with with ${id} deleted.`);
-        res
-            .status(200)
-            .send('Bookmark deleted.');
+        BookmarksService.deleteBookmark(
+            req.app.get('db'),
+            req.params.id
+        )
+            .then(() => {
+                res.status(204).end()
+            })
     });
 
 module.exports = bookmarksRouter

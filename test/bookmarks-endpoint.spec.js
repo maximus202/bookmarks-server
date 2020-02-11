@@ -50,6 +50,31 @@ describe('Bookmarks endpoint', () => {
     });
 
     describe('GET /bookmarks/:id', () => {
+        context('Given there is an XSS attack', () => {
+            const maliciousRequest = {
+                id: 911,
+                title: 'Naughty <script>alert("xss");</script>',
+                url: 'www.whatever.com',
+                description: 'Bad image <img src="https://url.to.file.which/does-not.exist" onerror="alert(document.cookie);">.',
+                rating: 5
+            }
+            beforeEach('insert malicious request', () => {
+                return db
+                    .into('bookmarks')
+                    .insert([maliciousRequest])
+            })
+            it('Removes XSS attack content', () => {
+                return supertest(app)
+                    .get(`/bookmarks/${maliciousRequest.id}`)
+                    .set('Authorization', 'bearer ' + process.env.API_TOKEN)
+                    .expect(200)
+                    .expect(res => {
+                        expect(res.body.title).to.eql('Naughty &lt;script&gt;alert(\"xss\");&lt;/script&gt;')
+                        expect(res.body.description).to.eql('Bad image <img src="https://url.to.file.which/does-not.exist">.')
+                    })
+            })
+        })
+
         context('Given no bookmarks', () => {
             it('responds with 404', () => {
                 const bookmarkId = 100
@@ -80,6 +105,31 @@ describe('Bookmarks endpoint', () => {
     })
 
     describe('POST /bookmarks', () => {
+        context('Given there is an XSS attack', () => {
+            const maliciousRequest = {
+                id: 911,
+                title: 'Naughty <script>alert("xss");</script>',
+                url: 'www.whatever.com',
+                description: 'Bad image <img src="https://url.to.file.which/does-not.exist" onerror="alert(document.cookie);">.',
+                rating: 5
+            }
+            beforeEach('insert malicious request', () => {
+                return db
+                    .into('bookmarks')
+                    .insert([maliciousRequest])
+            })
+            it('Removes XSS attack content', () => {
+                return supertest(app)
+                    .get(`/bookmarks/${maliciousRequest.id}`)
+                    .set('Authorization', 'bearer ' + process.env.API_TOKEN)
+                    .expect(200)
+                    .expect(res => {
+                        expect(res.body.title).to.eql('Naughty &lt;script&gt;alert(\"xss\");&lt;/script&gt;')
+                        expect(res.body.description).to.eql('Bad image <img src="https://url.to.file.which/does-not.exist">.')
+                    })
+            })
+        })
+
         const requiredFields = ['title', 'url', 'description', 'rating']
         requiredFields.forEach(field => {
             const newBookmark = {
@@ -129,6 +179,31 @@ describe('Bookmarks endpoint', () => {
                         .set('Authorization', 'bearer ' + process.env.API_TOKEN)
                         .expect(postRes.body)
                 )
+        })
+    })
+
+    describe('DELETE /bookmarks/:id', () => {
+        context('Given there are bookmarks in db', () => {
+            const testBookmarks = makeBookmarksArray()
+            beforeEach('insert bookmarks', () => {
+                return db
+                    .into('bookmarks')
+                    .insert(testBookmarks)
+            })
+            it('responds with 204 and removes the bookmark', () => {
+                const idToRemove = 2
+                const expectedBookmarks = testBookmarks.filter(bookmark => bookmark.id !== idToRemove)
+                return supertest(app)
+                    .delete(`/bookmarks/${idToRemove}`)
+                    .set('Authorization', 'bearer ' + process.env.API_TOKEN)
+                    .expect(204)
+                    .then(res =>
+                        supertest(app)
+                            .get('/bookmarks')
+                            .set('Authorization', 'bearer ' + process.env.API_TOKEN)
+                            .expect(expectedBookmarks)
+                    )
+            })
         })
     })
 });
