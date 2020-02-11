@@ -61,7 +61,7 @@ bookmarksRouter
 //Route for /bookmarks/:id (GET bookmarks based on id and DELETE bookmarks based on id)
 bookmarksRouter
     .route('/bookmarks/:id')
-    .all((res, req, next) => {
+    .all((req, res, next) => {
         const knexInstance = req.app.get('db');
         BookmarksService.getById(knexInstance, req.params.id)
             .then(bookmark => {
