@@ -79,11 +79,11 @@ bookmarksRouter
     .get((req, res) => {
         //Respond with single bookmark based on ID
         res.json({
-            id: bookmark.id,
-            title: xss(bookmark.title),
-            url: bookmark.url,
-            description: xss(bookmark.description),
-            rating: bookmark.rating
+            id: res.bookmark.id,
+            title: xss(res.bookmark.title),
+            url: res.bookmark.url,
+            description: xss(res.bookmark.description),
+            rating: res.bookmark.rating
         })
     })
     .delete((req, res) => {
