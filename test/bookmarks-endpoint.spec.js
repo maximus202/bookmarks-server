@@ -212,8 +212,9 @@ describe('Bookmarks endpoint', () => {
             it(`Responds with 404`, () => {
                 const bookmarkId = 1234
                 return supertest(app)
-                    .patch(`api/bookmarks/${bookmarkId}`)
-                    .expect(404, { error: { message: `Bookmark doesn't exist` } })
+                    .patch(`/api/bookmarks/${bookmarkId}`)
+                    .set('Authorization', 'bearer ' + process.env.API_TOKEN)
+                    .expect(404, { error: { message: `Bookmark does not exist` } })
             })
         })
     })
@@ -234,7 +235,8 @@ describe('Bookmarks endpoint', () => {
                 rating: '1'
             }
             return supertest(app)
-                .patch(`api/bookmarks/${idToUpdate}`)
+                .patch(`/api/bookmarks/${idToUpdate}`)
+                .set('Authorization', 'bearer ' + process.env.API_TOKEN)
                 .send(updateBookmark)
                 .expect(204)
         })
